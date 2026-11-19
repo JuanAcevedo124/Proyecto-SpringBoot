@@ -3,7 +3,9 @@ package com.coworkhub.presentacion.controlador;
 import com.coworkhub.negocio.model.MemberStatus;
 import com.coworkhub.negocio.service.MiembroService;
 import com.coworkhub.presentacion.dto.MiembroDto;
+import com.coworkhub.config.AutorizacionRecursos;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/miembros")
+@PreAuthorize(AutorizacionRecursos.PERSONAL)
 public class MiembroController {
 
     private final MiembroService servicio;
@@ -30,6 +33,7 @@ public class MiembroController {
         return servicio.listar(nombre, estado);
     }
 
+    @PreAuthorize(AutorizacionRecursos.PERSONAL + " or @autorizacion.esMiembroActual(#id)")
     @GetMapping("/{id}")
     public MiembroDto.Response obtener(@PathVariable Long id) {
         return servicio.obtener(id);
@@ -62,6 +66,7 @@ public class MiembroController {
     }
 
     /** RF-10. Sin ?mes= se usa el mes actual. */
+    @PreAuthorize(AutorizacionRecursos.PERSONAL + " or @autorizacion.esMiembroActual(#id)")
     @GetMapping("/{id}/consumo")
     public MiembroDto.ConsumoResponse consumo(@PathVariable Long id,
                                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes) {
