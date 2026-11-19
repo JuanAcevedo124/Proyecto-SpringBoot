@@ -1,5 +1,6 @@
 package com.coworkhub.presentacion.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.coworkhub.negocio.model.Equipment;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,9 +11,11 @@ public final class EquipamientoDto {
     private EquipamientoDto() {
     }
 
-    public record Request(@NotBlank(message = "El nombre es obligatorio") @Size(max = 80) String nombre) {
+    @Schema(name = "EquipamientoRequest")
+    public record Request(@Schema(example = "Proyector 4K") @NotBlank(message = "El nombre es obligatorio") @Size(max = 80) String nombre) {
     }
 
+    @Schema(name = "EquipamientoResponse")
     public record Response(Long id, String nombre) {
 
         public static Response de(Equipment e) {

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Reemplaza el /error por defecto de Spring Boot para que los errores que no pasan por el
  * @RestControllerAdvice (los que ocurren en el contenedor de servlets) tambien usen el cuerpo estandar.
  */
+@io.swagger.v3.oas.annotations.Hidden
 @RestController
 public class ControladorErrores implements ErrorController {
 
