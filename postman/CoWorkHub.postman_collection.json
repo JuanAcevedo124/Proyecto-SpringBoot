@@ -1,0 +1,1495 @@
+{
+  "info": {
+    "_postman_id": "a4764470-e166-4f34-9317-9156b64a0221",
+    "name": "CoWorkHub - Escenarios de aceptacion",
+    "description": "14 escenarios de aceptacion del enunciado + pruebas extra. Reinicie la aplicacion (ddl-auto=create recarga import.sql) antes de ejecutarla. Ejecutar en orden: npx newman run postman/CoWorkHub.postman_collection.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Preparacion",
+      "item": [
+        {
+          "name": "Login admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); }); pm.collectionVariables.set('tokenAdmin', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"admin\",\n  \"contrasena\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login ana",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); }); pm.collectionVariables.set('tokenAna', pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"ana\",\n  \"contrasena\": \"ana123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparar: dia de prueba aleatorio",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function fmt(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':00';}",
+                  "function desde(ms){const d=new Date(Date.now()+ms);d.setSeconds(0,0);return d;}",
+                  "const dias=20+Math.floor(Math.random()*300); const d=new Date(Date.now()+dias*86400000);const p=n=>String(n).padStart(2,'0'); pm.collectionVariables.set('dia', d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()));pm.collectionVariables.set('sufijo', String(Date.now()));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); }); pm.test('status UP', ()=> pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "RF-15. Ademas elige un dia futuro aleatorio para no chocar con ejecuciones anteriores."
+          }
+        },
+        {
+          "name": "Preparar: plan sin horas incluidas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function(){ pm.response.to.have.status(201); }); pm.collectionVariables.set('planPruebas', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/planes",
+            "description": "Plan con 0 horas incluidas para que el costo de sala sea > 0 y se vea el cargo del 50 %.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Plan pruebas {{sufijo}}\", \"horasIncluidasMes\": 0, \"descuentoExcedente\": 0, \"maxReservasActivas\": 20}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Preparar: miembro de pruebas con su usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function(){ pm.response.to.have.status(201); }); pm.collectionVariables.set('miembroPruebas', pm.response.json().id); pm.test('No expone la contrasena', ()=> pm.expect(pm.response.json()).to.not.have.property('contrasena'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/miembros",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"documento\": \"{{sufijo}}\", \"nombreCompleto\": \"Miembro Pruebas\", \"email\": \"pruebas{{sufijo}}@example.com\", \"planId\": {{planPruebas}}, \"usuario\": \"p{{sufijo}}\", \"contrasena\": \"pruebas123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Escenarios de aceptacion",
+      "item": [
+        {
+          "name": "E01 Reservar sala libre con 2 servicios -> 201 con costo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function(){ pm.response.to.have.status(201); });",
+                  "const r = pm.response.json(); pm.collectionVariables.set('reservaE01', r.id);",
+                  "pm.test('2 servicios', ()=> pm.expect(r.servicios.length).to.eql(2));",
+                  "pm.test('Costo sala = 60000 (1 h excedente sin descuento)', ()=> pm.expect(r.costoSala).to.eql(60000));",
+                  "pm.test('Costo servicios = 2x8000 + 25000', ()=> pm.expect(r.costoServicios).to.eql(41000));",
+                  "pm.test('Total = sala + servicios', ()=> pm.expect(r.costoTotal).to.eql(101000));",
+                  "pm.test('Estado PENDING', ()=> pm.expect(r.estado).to.eql('PENDING'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": {{miembroPruebas}},\n  \"salaId\": 5,\n  \"inicio\": \"{{dia}}T09:00:00\",\n  \"fin\": \"{{dia}}T10:00:00\",\n  \"asistentes\": 4,\n  \"servicios\": [\n    {\n      \"servicioId\": 1,\n      \"cantidad\": 2\n    },\n    {\n      \"servicioId\": 2,\n      \"cantidad\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E02 Reservar en horario que se cruza -> 409 RN-01",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-01', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-01'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 4,\n  \"salaId\": 5,\n  \"inicio\": \"{{dia}}T09:30:00\",\n  \"fin\": \"{{dia}}T10:30:00\",\n  \"asistentes\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E03 Reservar 10:00-11:00 cuando otra va de 09:00 a 10:00 -> 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function(){ pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 4,\n  \"salaId\": 5,\n  \"inicio\": \"{{dia}}T10:00:00\",\n  \"fin\": \"{{dia}}T11:00:00\",\n  \"asistentes\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E04a Reservar 45 minutos -> 409 RN-02",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-02', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-02'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 4,\n  \"salaId\": 5,\n  \"inicio\": \"{{dia}}T12:00:00\",\n  \"fin\": \"{{dia}}T12:45:00\",\n  \"asistentes\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E04b Reservar fuera del horario de la sede -> 409 RN-03",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-03', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-03'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "La Sede Centro abre de 07:00 a 21:00.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 4,\n  \"salaId\": 1,\n  \"inicio\": \"{{dia}}T06:00:00\",\n  \"fin\": \"{{dia}}T07:00:00\",\n  \"asistentes\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E05a Preparar reserva que empieza en 30 h",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function fmt(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':00';}",
+                  "function desde(ms){const d=new Date(Date.now()+ms);d.setSeconds(0,0);return d;}",
+                  "const i=desde(30*3600000); pm.collectionVariables.set('ini30', fmt(i)); pm.collectionVariables.set('fin30', fmt(new Date(i.getTime()+1800000)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function(){ pm.response.to.have.status(201); }); pm.collectionVariables.set('reserva30', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"miembroId\": {{miembroPruebas}}, \"salaId\": 6, \"inicio\": \"{{ini30}}\", \"fin\": \"{{fin30}}\", \"asistentes\": 2}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E05b Cancelar con 30 h de anticipacion -> 200, cargo 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "const r = pm.response.json();",
+                  "pm.test('Cargo 0', ()=> pm.expect(r.cargoCancelacion).to.eql(0));",
+                  "pm.test('Estado CANCELLED', ()=> pm.expect(r.estado).to.eql('CANCELLED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas/{{reserva30}}/cancelar",
+            "description": ""
+          }
+        },
+        {
+          "name": "E06a Preparar reserva que empieza en 5 h",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function fmt(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':00';}",
+                  "function desde(ms){const d=new Date(Date.now()+ms);d.setSeconds(0,0);return d;}",
+                  "const i=desde(5*3600000); pm.collectionVariables.set('ini5', fmt(i)); pm.collectionVariables.set('fin5', fmt(new Date(i.getTime()+1800000)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function(){ pm.response.to.have.status(201); }); pm.collectionVariables.set('reserva5', pm.response.json().id); pm.collectionVariables.set('costo5', pm.response.json().costoSala);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"miembroId\": {{miembroPruebas}}, \"salaId\": 6, \"inicio\": \"{{ini5}}\", \"fin\": \"{{fin5}}\", \"asistentes\": 2}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E06b Cancelar con 5 h de anticipacion -> 200, cargo del 50 %",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "const r = pm.response.json(); const costo = Number(pm.collectionVariables.get('costo5'));",
+                  "pm.test('Costo de sala > 0', ()=> pm.expect(costo).to.be.above(0));",
+                  "pm.test('Cargo = 50 % del costo de sala', ()=> pm.expect(r.cargoCancelacion).to.eql(costo/2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas/{{reserva5}}/cancelar",
+            "description": ""
+          }
+        },
+        {
+          "name": "E07a Preparar reserva que empieza en 1 h 5 min",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function fmt(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':00';}",
+                  "function desde(ms){const d=new Date(Date.now()+ms);d.setSeconds(0,0);return d;}",
+                  "const i=desde(65*60000); pm.collectionVariables.set('ini1', fmt(i)); pm.collectionVariables.set('fin1', fmt(new Date(i.getTime()+1800000)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function(){ pm.response.to.have.status(201); }); pm.collectionVariables.set('reserva1', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"miembroId\": {{miembroPruebas}}, \"salaId\": 7, \"inicio\": \"{{ini1}}\", \"fin\": \"{{fin1}}\", \"asistentes\": 1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E07b Cancelar con ~1 h de anticipacion -> 409 RN-08",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-08', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-08'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas/{{reserva1}}/cancelar",
+            "description": ""
+          }
+        },
+        {
+          "name": "E08 Confirmar una reserva cancelada -> 409 RN-09",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-09', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-09'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas/{{reserva30}}/confirmar",
+            "description": ""
+          }
+        },
+        {
+          "name": "E09 Un miembro consulta la reserva de otro -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', function(){ pm.response.to.have.status(403); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = ACCESO_DENEGADO', function(){ pm.expect(pm.response.json().codigo).to.eql('ACCESO_DENEGADO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAna}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas/{{reservaE01}}",
+            "description": ""
+          }
+        },
+        {
+          "name": "E10a Endpoint protegido sin token -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function(){ pm.response.to.have.status(401); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = NO_AUTENTICADO', function(){ pm.expect(pm.response.json().codigo).to.eql('NO_AUTENTICADO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sedes",
+            "description": ""
+          }
+        },
+        {
+          "name": "E10b Endpoint protegido con token alterado -> 401",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "function fmt(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':00';}",
+                  "function desde(ms){const d=new Date(Date.now()+ms);d.setSeconds(0,0);return d;}",
+                  "pm.request.headers.upsert({key:'Authorization', value:'Bearer '+pm.collectionVariables.get('tokenAdmin')+'alterado'});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function(){ pm.response.to.have.status(401); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = NO_AUTENTICADO', function(){ pm.expect(pm.response.json().codigo).to.eql('NO_AUTENTICADO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sedes",
+            "description": ""
+          }
+        },
+        {
+          "name": "E11 Eliminar una sala con reservas futuras -> 409 RN-12",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-12', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-12'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/salas/1",
+            "description": ""
+          }
+        },
+        {
+          "name": "E12 Crear una sede sin nombre -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function(){ pm.response.to.have.status(400); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = VALIDACION', function(){ pm.expect(pm.response.json().codigo).to.eql('VALIDACION'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sedes",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ciudad\": \"Cali\",\n  \"direccion\": \"Calle 5 # 1-1\",\n  \"horaApertura\": \"08:00\",\n  \"horaCierre\": \"18:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E13a Solicitud simultanea 1 (misma sala y horario) -> 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function(){ pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "Postman/newman envia las solicitudes en serie. La concurrencia real (6 solicitudes en paralelo) se prueba con scripts/prueba-concurrencia.sh.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 4,\n  \"salaId\": 7,\n  \"inicio\": \"{{dia}}T15:00:00\",\n  \"fin\": \"{{dia}}T16:00:00\",\n  \"asistentes\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E13b Solicitud simultanea 2 (misma sala y horario) -> 409 RN-01",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-01', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-01'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 2,\n  \"salaId\": 7,\n  \"inicio\": \"{{dia}}T15:00:00\",\n  \"fin\": \"{{dia}}T16:00:00\",\n  \"asistentes\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E14 Listar miembros con ?estado=SUSPENDED -> solo suspendidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "const l = pm.response.json();",
+                  "pm.test('Al menos uno', ()=> pm.expect(l.length).to.be.above(0));",
+                  "pm.test('Todos SUSPENDED', ()=> l.forEach(m => pm.expect(m.estado).to.eql('SUSPENDED')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/miembros?estado=SUSPENDED",
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pruebas extra de reglas y errores",
+      "item": [
+        {
+          "name": "X01 Cambiar el precio de un servicio no altera reservas existentes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/servicios-adicionales/1",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cafe ilimitado\",\n  \"precioUnitario\": 9500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "X02 La reserva E01 conserva el precio aplicado (8000)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); });",
+                  "const s = pm.response.json().servicios.find(x => x.servicioId === 1);",
+                  "pm.test('precioUnitarioAplicado sigue en 8000', ()=> pm.expect(s.precioUnitarioAplicado).to.eql(8000));",
+                  "pm.test('Total sin cambios', ()=> pm.expect(pm.response.json().costoTotal).to.eql(101000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas/{{reservaE01}}",
+            "description": ""
+          }
+        },
+        {
+          "name": "X03 Quitar un servicio de una reserva PENDING recalcula el costo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); }); pm.test('Total = 60000 + 16000', ()=> pm.expect(pm.response.json().costoTotal).to.eql(76000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas/{{reservaE01}}/servicios/2",
+            "description": ""
+          }
+        },
+        {
+          "name": "X04 Un MEMBER no puede listar todas las reservas -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', function(){ pm.response.to.have.status(403); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = ACCESO_DENEGADO', function(){ pm.expect(pm.response.json().codigo).to.eql('ACCESO_DENEGADO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAna}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": ""
+          }
+        },
+        {
+          "name": "X05 Un MEMBER no puede crear catalogos -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', function(){ pm.response.to.have.status(403); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = ACCESO_DENEGADO', function(){ pm.expect(pm.response.json().codigo).to.eql('ACCESO_DENEGADO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAna}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/equipamientos",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Parlante\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "X06 Miembro suspendido no puede reservar -> 409 RN-05",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-05', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-05'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 5,\n  \"salaId\": 5,\n  \"inicio\": \"{{dia}}T14:00:00\",\n  \"fin\": \"{{dia}}T15:00:00\",\n  \"asistentes\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "X07 Sala inactiva -> 409 RN-04",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-04', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-04'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 4,\n  \"salaId\": 4,\n  \"inicio\": \"{{dia}}T14:00:00\",\n  \"fin\": \"{{dia}}T15:00:00\",\n  \"asistentes\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "X08 Limite de reservas activas del plan -> 409 RN-06",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-06', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-06'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/reservas",
+            "description": "Carla (plan Basico, max 2) ya tiene 2 reservas activas futuras en import.sql.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 3,\n  \"salaId\": 3,\n  \"inicio\": \"{{dia}}T14:00:00\",\n  \"fin\": \"{{dia}}T15:00:00\",\n  \"asistentes\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "X09 Email duplicado sin distinguir mayusculas -> 409 RN-11",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function(){ pm.response.to.have.status(409); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RN-11', function(){ pm.expect(pm.response.json().codigo).to.eql('RN-11'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/miembros",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"999888777\",\n  \"nombreCompleto\": \"Copia\",\n  \"email\": \"ANA.GOMEZ@example.com\",\n  \"planId\": 1,\n  \"usuario\": \"copia99\",\n  \"contrasena\": \"copia123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "X10 Ruta inexistente -> 404 con cuerpo estandar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function(){ pm.response.to.have.status(404); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = RUTA_NO_ENCONTRADA', function(){ pm.expect(pm.response.json().codigo).to.eql('RUTA_NO_ENCONTRADA'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/no-existe",
+            "description": ""
+          }
+        },
+        {
+          "name": "X11 JSON mal formado -> 400 con cuerpo estandar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function(){ pm.response.to.have.status(400); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = JSON_INVALIDO', function(){ pm.expect(pm.response.json().codigo).to.eql('JSON_INVALIDO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/sedes",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "X12 Perfil del usuario autenticado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); }); pm.test('miembroId 1', ()=> pm.expect(pm.response.json().miembroId).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAna}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/perfil",
+            "description": ""
+          }
+        },
+        {
+          "name": "X13 Consumo mensual del miembro (propio)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function(){ pm.response.to.have.status(200); }); pm.test('Tiene horas', ()=> pm.expect(pm.response.json()).to.have.property('horasRestantes'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAna}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/miembros/1/consumo",
+            "description": ""
+          }
+        },
+        {
+          "name": "X14 Login con contrasena incorrecta -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function(){ pm.response.to.have.status(401); });pm.test('Cuerpo de error estandar', function(){ const b=pm.response.json(); pm.expect(b).to.have.all.keys('error','codigo','timestamp'); }); pm.test('codigo = NO_AUTENTICADO', function(){ pm.expect(pm.response.json().codigo).to.eql('NO_AUTENTICADO'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"admin\",\n  \"contrasena\": \"mala\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenAna",
+      "value": ""
+    },
+    {
+      "key": "dia",
+      "value": ""
+    },
+    {
+      "key": "sufijo",
+      "value": ""
+    },
+    {
+      "key": "planPruebas",
+      "value": ""
+    },
+    {
+      "key": "miembroPruebas",
+      "value": ""
+    },
+    {
+      "key": "reservaE01",
+      "value": ""
+    },
+    {
+      "key": "reserva30",
+      "value": ""
+    },
+    {
+      "key": "reserva5",
+      "value": ""
+    },
+    {
+      "key": "costo5",
+      "value": ""
+    },
+    {
+      "key": "reserva1",
+      "value": ""
+    },
+    {
+      "key": "ini30",
+      "value": ""
+    },
+    {
+      "key": "fin30",
+      "value": ""
+    },
+    {
+      "key": "ini5",
+      "value": ""
+    },
+    {
+      "key": "fin5",
+      "value": ""
+    },
+    {
+      "key": "ini1",
+      "value": ""
+    },
+    {
+      "key": "fin1",
+      "value": ""
+    }
+  ]
+}
