@@ -1,4 +1,4 @@
-# CoWorkHub — API REST con Spring Boot
+# CoWorkHub — Aplicación web con Spring Boot
 
 API REST para una red de coworking: evita reservas duplicadas, controla las horas que consume cada miembro,
 cobra las cancelaciones siempre con la misma regla y limita a cada usuario a lo que le corresponde.
@@ -66,7 +66,21 @@ Ejemplo en PowerShell: `$env:DB_URL="jdbc:mysql://localhost:3307/coworkhub"; ./m
 Otros miembros sin cuenta: 3 Carla Ruiz (Básico, ya en su máximo de reservas activas), 4 Diego Torres, 5 Elena Martinez (`SUSPENDED`).
 Sedes: 1 Sede Centro (07:00–21:00) y 2 Sede Norte 24h (00:00–23:59). La sala 4 está inactiva.
 
-## 4. Swagger UI
+## 4. Interfaz web (frontend)
+
+Con el proyecto corriendo, abra <http://localhost:8080/>. Es un frontend en HTML, CSS y JavaScript puro
+(`src/main/resources/static/`) que consume la misma API REST con el JWT de `/auth/login`.
+
+| Rol | Qué ve |
+|---|---|
+| `ADMIN` | Inicio con resumen, disponibilidad, todas las reservas (confirmar, completar, cancelar, servicios), miembros y CRUD de catálogos |
+| `RECEPTIONIST` | Lo mismo que ADMIN, pero los catálogos son de solo lectura |
+| `MEMBER` | Sus horas del mes, disponibilidad, **solo sus** reservas (crear, ver, cambiar servicios, cancelar) y catálogos de solo lectura |
+
+En la pantalla de inicio de sesión hay botones para completar los usuarios de prueba. Los errores del backend se
+muestran con su código (por ejemplo `RN-01`). Las reglas y los permisos se validan siempre en el backend.
+
+## 5. Swagger UI
 
 - Swagger UI: <http://localhost:8080/doc/swagger-ui.html>
 - OpenAPI JSON: <http://localhost:8080/v3/api-docs> (copia exportada en [`docs/openapi.json`](docs/openapi.json))
@@ -78,7 +92,7 @@ curl -s -X POST http://localhost:8080/auth/login -H "Content-Type: application/j
 curl -s http://localhost:8080/api/salas -H "Authorization: Bearer <token>"
 ```
 
-## 5. Pruebas
+## 6. Pruebas
 
 | Qué | Cómo |
 |---|---|
@@ -88,7 +102,7 @@ curl -s http://localhost:8080/api/salas -H "Authorization: Bearer <token>"
 
 Reinicie la aplicación antes de ejecutar la colección para partir de los datos de `import.sql`.
 
-## 6. Arquitectura
+## 7. Arquitectura
 
 ```
 com.coworkhub

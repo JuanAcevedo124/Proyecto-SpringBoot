@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CoWorkHub</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<!-- =========================== LOGIN =========================== -->
+<section id="vista-login" class="login">
+    <div class="login-card">
+        <div class="marca marca-grande"><span class="marca-icono">◧</span> CoWorkHub</div>
+        <p class="sub">Gestión de la red de coworking</p>
+        <form id="form-login" autocomplete="on">
+            <label>Usuario <input name="usuario" required autocomplete="username"></label>
+            <label>Contraseña <input name="contrasena" type="password" required autocomplete="current-password"></label>
+            <button class="btn btn-primario btn-bloque" type="submit">Iniciar sesión</button>
+        </form>
+        <div class="demo">
+            <p>Usuarios de prueba (clic para completar):</p>
+            <div class="demo-botones">
+                <button type="button" class="chip" data-u="admin" data-p="admin123">admin · ADMIN</button>
+                <button type="button" class="chip" data-u="recepcion" data-p="recep123">recepcion · RECEPTIONIST</button>
+                <button type="button" class="chip" data-u="ana" data-p="ana123">ana · MEMBER</button>
+                <button type="button" class="chip" data-u="luis" data-p="luis123">luis · MEMBER</button>
+            </div>
+        </div>
+        <p class="pie-login"><a href="/doc/swagger-ui.html" target="_blank">Swagger UI</a></p>
+    </div>
+</section>
+
+<!-- =========================== APP =========================== -->
+<section id="vista-app" class="app oculto">
+    <header class="barra">
+        <div class="marca"><span class="marca-icono">◧</span> CoWorkHub</div>
+        <nav id="menu" class="menu"></nav>
+        <div class="usuario">
+            <span id="usuario-nombre"></span>
+            <span id="usuario-rol" class="etiqueta"></span>
+            <button id="btn-salir" class="btn btn-fantasma">Salir</button>
+        </div>
+    </header>
+
+    <main class="contenido">
+
+        <!-- Inicio -->
+        <section data-vista="inicio" class="vista">
+            <h1>Hola, <span id="saludo"></span></h1>
+            <div id="inicio-tarjetas" class="tarjetas"></div>
+            <div id="inicio-consumo"></div>
+        </section>
+
+        <!-- Disponibilidad -->
+        <section data-vista="disponibilidad" class="vista">
+            <h1>Disponibilidad</h1>
+            <p class="ayuda">Salas libres de una sede en una fecha y rango horario (RF-03).</p>
+            <form id="form-disp" class="panel filtros">
+                <label>Sede <select name="sedeId" required></select></label>
+                <label>Fecha <input name="fecha" type="date" required></label>
+                <label>Desde <input name="horaInicio" type="time" step="1800" value="10:00" required></label>
+                <label>Hasta <input name="horaFin" type="time" step="1800" value="11:00" required></label>
+                <label>Capacidad mín. <input name="capacidadMinima" type="number" min="1" placeholder="—"></label>
+                <fieldset class="checks"><legend>Equipamiento</legend><div id="disp-equipos"></div></fieldset>
+                <button class="btn btn-primario" type="submit">Buscar</button>
+            </form>
+            <div id="disp-resultado"></div>
+        </section>
+
+        <!-- Reservas -->
+        <section data-vista="reservas" class="vista">
+            <div class="titulo-fila">
+                <h1>Reservas</h1>
+                <button class="btn btn-primario" data-accion="nueva-reserva">+ Nueva reserva</button>
+            </div>
+            <form id="form-filtro-reservas" class="panel filtros">
+                <label class="solo-personal">Filtro
+                    <select name="tipo">
+                        <option value="todas">Todas</option>
+                        <option value="miembro">Por miembro</option>
+                        <option value="sala">Por sala y fecha</option>
+                        <option value="estado">Por estado</option>
+                    </select>
+                </label>
+                <label data-filtro="miembro" class="solo-personal">Miembro <select name="miembroId"></select></label>
+                <label data-filtro="sala">Sala <select name="salaId"></select></label>
+                <label data-filtro="sala">Fecha <input name="fecha" type="date"></label>
+                <label data-filtro="estado">Estado
+                    <select name="estado">
+                        <option>PENDING</option><option>CONFIRMED</option><option>COMPLETED</option><option>CANCELLED</option>
+                    </select>
+                </label>
+                <button class="btn" type="submit">Aplicar</button>
+            </form>
+            <div id="reservas-lista"></div>
+        </section>
+
+        <!-- Miembros (personal) -->
+        <section data-vista="miembros" class="vista">
+            <div class="titulo-fila">
+                <h1>Miembros</h1>
+                <button class="btn btn-primario" data-accion="nuevo-miembro">+ Registrar miembro</button>
+            </div>
+            <form id="form-filtro-miembros" class="panel filtros">
+                <label>Nombre <input name="nombre" placeholder="contiene…"></label>
+                <label>Estado
+                    <select name="estado"><option value="">Todos</option><option>ACTIVE</option><option>SUSPENDED</option></select>
+                </label>
+                <button class="btn" type="submit">Filtrar</button>
+            </form>
+            <div id="miembros-lista"></div>
+        </section>
+
+        <!-- Catalogos -->
+        <section data-vista="catalogos" class="vista">
+            <h1>Catálogos</h1>
+            <div id="catalogo-pestanas" class="pestanas"></div>
+            <div class="titulo-fila">
+                <p class="ayuda" id="catalogo-ayuda"></p>
+                <button class="btn btn-primario solo-admin" data-accion="nuevo-catalogo">+ Nuevo</button>
+            </div>
+            <div id="catalogo-lista"></div>
+        </section>
+    </main>
+</section>
+
+<!-- Modal generico -->
+<dialog id="modal">
+    <form method="dialog" id="modal-form">
+        <header class="modal-cabecera">
+            <h2 id="modal-titulo"></h2>
+            <button type="button" class="btn btn-fantasma cerrar" data-cerrar-modal aria-label="Cerrar">✕</button>
+        </header>
+        <div id="modal-cuerpo" class="modal-cuerpo"></div>
+        <footer class="modal-pie" id="modal-pie">
+            <button type="button" class="btn" data-cerrar-modal>Cancelar</button>
+            <button value="ok" class="btn btn-primario" id="modal-ok">Guardar</button>
+        </footer>
+    </form>
+</dialog>
+
+<div id="avisos" class="avisos" aria-live="polite"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

@@ -29,7 +29,9 @@ public class SecurityConfig {
 
     static final String[] RUTAS_PUBLICAS = {
             "/auth/login", "/actuator/health", "/actuator/health/**", "/actuator/info",
-            "/doc/**", "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error"
+            "/doc/**", "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error",
+            // Frontend web (HTML, CSS y JS estaticos). Los datos siguen protegidos: el JS llama a /api/** con el JWT.
+            "/", "/index.html", "/css/**", "/js/**", "/favicon.svg"
     };
 
     @Bean
